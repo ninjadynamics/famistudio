@@ -17,6 +17,16 @@ PRG ROM segments (CODE0-CODE6, CODE).
 #include <string.h>
 #include "neslib.h"
 
+//#resource "famistudio_note_table_lsb.bin"
+//#resource "famistudio_note_table_msb.bin"
+//#link "famistudio.s"
+
+#include "famistudio.h"
+
+
+//#link "song.s"
+extern unsigned char music_data_shatterhand[];
+
 // link the pattern table into CHR ROM
 //#link "chr_generic.s"
 
@@ -37,49 +47,13 @@ PRG ROM segments (CODE0-CODE6, CODE).
 
 #define MMC3_MIRROR(n) POKE(0xa000, (n))
 
-#pragma rodata-name("CODE0")
-const unsigned char TEXT0[]={"Bank 0 @ 8000"};
-#pragma rodata-name("CODE1")
-const unsigned char TEXT1[]={"Bank 1 @ 8000"};
-#pragma rodata-name("CODE5")
-const unsigned char TEXT5[]={"Bank 5 @ A000"};
-#pragma rodata-name("CODE6")
-const unsigned char TEXT6[]={"Bank 6 @ C000"};
-
-// put functions in bank 1
-#pragma code-name("CODE1")
-
-void draw_text(word addr, const char* text) {
-  vram_adr(addr);
-  vram_write(text, strlen(text));
-}
-
-// back to main code segment
-#pragma code-name("CODE")
-
 void main(void)
 {
-  // set palette colors
-  pal_col(1,0x04);
-  pal_col(2,0x20);
-  pal_col(3,0x30);
-  // setup CHR bank switching for background
-  MMC3_CHR_0000(0);
-  MMC3_CHR_0800(1);
-  // select bank 0 in $8000-$9fff
-  MMC3_PRG_8000(0);
-  vram_adr(NTADR_A(2,2));
-  vram_write(TEXT0, 13);
-  // select bank 1 in $8000-$9fff
-  // also needed to call draw_text()
-  MMC3_PRG_8000(1);
-  draw_text(NTADR_A(2,3), TEXT1);
-  // select bank 5 in $a000-$bfff
-  MMC3_PRG_A000(5);
-  draw_text(NTADR_A(2,4), TEXT5);
-  // $c000-$dfff is fixed to bank 6
-  draw_text(NTADR_A(2,5), TEXT6);  
-  //enable rendering
-  ppu_on_all();
-  while(1);//do nothing, infinite loop
+  famistudio_init(FAMISTUDIO_PLATFORM_NTSC, music_data_shatterhand);  
+  nmi_set_callback(famistudio_update);
+  famistudio_music_play(0);  
+  for(;;) {
+    //famistudio_update();
+    //ppu_wait_nmi();
+  }
 }
